@@ -90,3 +90,11 @@ def test_summary_survives_unparsable_row(today):
 
     assert response.status_code == 200
     assert response.json()["count"] == 1
+
+
+def test_summary_is_scoped_to_one_habit(today):
+    read = _habit("Read 20 minutes")
+    stretch = _habit("Stretch")
+    _checkin(read, today)
+
+    assert client.get(f"/habits/{stretch}/summary").json()["count"] == 0
