@@ -12,6 +12,7 @@ Test:
 
 import sqlite3
 from contextlib import closing
+from datetime import date, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -20,6 +21,11 @@ from pydantic import BaseModel
 DB_PATH = Path(__file__).parent / "habits.db"
 
 app = FastAPI(title="Habit Tracker")
+
+
+def _today() -> date:
+    """Today in the server's local timezone; pinned by tests via monkeypatch."""
+    return date.today()
 
 
 def get_db() -> sqlite3.Connection:
@@ -87,3 +93,28 @@ def list_checkins(habit_id: int):
             "SELECT day FROM checkins WHERE habit_id = ? ORDER BY day", (habit_id,)
         ).fetchall()
     return [r["day"] for r in rows]
+
+
+@app.get("/habits/{habit_id}/streak")
+def get_streak(habit_id: int):
+    """Number of consecutive days with a check-in, counting back from today."""
+    with closing(get_db()) as conn:
+        habit = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+        if habit is None:
+            raise HTTPException(status_code=404, detail="unknown habit")
+        rows = conn.execute("SELECT day FROM checkins WHERE habit_id = ?", (habit_id,)).fetchall()
+
+    days: set[date] = set()
+    for row in rows:
+        try:
+            days.add(date.fromisoformat(row["day"]))
+        except (TypeError, ValueError):
+            # Pre-validation (task 2) is out of scope here; a junk row must not 500.
+            continue
+
+    streak = 0
+    cursor = _today()
+    while cursor in days:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return {"habit_id": habit_id, "streak": streak}
