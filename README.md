@@ -8,7 +8,7 @@ and an **AI review** to compare against.
 
 ```bash
 pip install -r requirements.txt
-python -m pytest          # 10 tests
+python -m pytest          # 20 tests
 uvicorn main:app --reload # http://localhost:8000/docs
 ```
 
@@ -71,8 +71,8 @@ Check-ins in the **last seven calendar days, today included** (`today-6 .. today
 
 | Branch | Feature | PR | Manual review |
 | --- | --- | --- | --- |
-| `feature/streak` | task 1, `GET /habits/{id}/streak` | see the PR linked in this week's submission | [`docs/reviews/feature-1-streak.md`](docs/reviews/feature-1-streak.md) |
-| `feature/weekly-summary` | task 3, `GET /habits/{id}/summary` | same | [`docs/reviews/feature-2-summary.md`](docs/reviews/feature-2-summary.md) |
+| `feature/streak` | task 1, `GET /habits/{id}/streak` | [#1](https://github.com/mehmeteminakkaya/week6-habit-tracker/pull/1) | [`docs/reviews/feature-1-streak.md`](docs/reviews/feature-1-streak.md) |
+| `feature/weekly-summary` | task 3, `GET /habits/{id}/summary` | [#2](https://github.com/mehmeteminakkaya/week6-habit-tracker/pull/2) | [`docs/reviews/feature-2-summary.md`](docs/reviews/feature-2-summary.md) |
 
 Each branch carries two commits: the feature as the agent first produced it, then the
 review-driven fix. The review documents list the blocking findings (unknown habit returned
@@ -84,8 +84,8 @@ trade-offs that were accepted instead of fixed.
 ```
 main.py                    app + the two new endpoints
 test_main.py               starter tests
-tests/test_streak.py       10 streak tests
-tests/test_summary.py      summary tests
+tests/test_streak.py       9 streak tests
+tests/test_summary.py      8 summary tests
 conftest.py                per-test SQLite isolation
 docs/TASKS.md              course task list
 docs/guardrails.md         guardrail commands + failing-build proof
