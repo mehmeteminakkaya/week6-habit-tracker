@@ -94,3 +94,19 @@ def test_streak_survives_unparsable_row(today):
 
     assert response.status_code == 200
     assert response.json()["streak"] == 1
+
+
+def test_streak_ignores_future_checkins(today):
+    habit_id = _habit()
+    _checkin(habit_id, today)
+    _checkin(habit_id, today + timedelta(days=1))
+
+    assert client.get(f"/habits/{habit_id}/streak").json()["streak"] == 1
+
+
+def test_streak_is_scoped_to_one_habit(today):
+    read = _habit("Read 20 minutes")
+    stretch = _habit("Stretch")
+    _checkin(read, today)
+
+    assert client.get(f"/habits/{stretch}/streak").json()["streak"] == 0
