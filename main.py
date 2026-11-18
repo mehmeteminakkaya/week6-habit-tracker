@@ -124,11 +124,20 @@ def get_streak(habit_id: int):
 def get_summary(habit_id: int):
     """Check-ins in the last seven days, today included, as a distinct-day count."""
     with closing(get_db()) as conn:
+        habit = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+        if habit is None:
+            raise HTTPException(status_code=404, detail="unknown habit")
         rows = conn.execute("SELECT day FROM checkins WHERE habit_id = ?", (habit_id,)).fetchall()
 
     end = _today()
     start = end - timedelta(days=6)
-    days = {date.fromisoformat(row["day"]) for row in rows}
+    days: set[date] = set()
+    for row in rows:
+        try:
+            days.add(date.fromisoformat(row["day"]))
+        except (TypeError, ValueError):
+            # Pre-validation (task 2) is out of scope here; a junk row must not 500.
+            continue
     count = len([day for day in days if start <= day <= end])
     return {
         "habit_id": habit_id,

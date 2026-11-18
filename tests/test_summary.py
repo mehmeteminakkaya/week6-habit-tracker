@@ -43,3 +43,50 @@ def test_summary_is_zero_without_checkins(today):
     habit_id = _habit()
 
     assert client.get(f"/habits/{habit_id}/summary").json()["count"] == 0
+
+
+def test_summary_window_is_seven_days_inclusive(today):
+    habit_id = _habit()
+    _checkin(habit_id, today - timedelta(days=6))  # first day of the window
+    _checkin(habit_id, today - timedelta(days=7))  # one day too old
+
+    body = client.get(f"/habits/{habit_id}/summary").json()
+
+    assert body["count"] == 1
+    assert body["window_start"] == (today - timedelta(days=6)).isoformat()
+    assert body["window_end"] == today.isoformat()
+
+
+def test_summary_ignores_future_checkins(today):
+    habit_id = _habit()
+    _checkin(habit_id, today + timedelta(days=1))
+
+    assert client.get(f"/habits/{habit_id}/summary").json()["count"] == 0
+
+
+def test_summary_counts_a_duplicate_day_once(today):
+    habit_id = _habit()
+    _checkin(habit_id, today)
+    _checkin(habit_id, today)
+
+    assert client.get(f"/habits/{habit_id}/summary").json()["count"] == 1
+
+
+def test_summary_unknown_habit_is_404(today):
+    assert client.get("/habits/99999/summary").status_code == 404
+
+
+def test_summary_survives_unparsable_row(today):
+    habit_id = _habit()
+    _checkin(habit_id, today)
+    with main.get_db() as conn:
+        conn.execute(
+            "INSERT INTO checkins (habit_id, day) VALUES (?, ?)",
+            (habit_id, "2026-13-45"),
+        )
+        conn.commit()
+
+    response = client.get(f"/habits/{habit_id}/summary")
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
